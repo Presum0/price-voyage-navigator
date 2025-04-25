@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { ExternalLink, Heart, LineChart, ShoppingCart, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { PriceHistoryModal } from "@/components/PriceHistoryModal";
 import { Product, Platform } from "@/types/product";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ProductCardProps {
   product: Product;
@@ -15,6 +15,8 @@ interface ProductCardProps {
 export function ProductCard({ product, isBestDeal = false }: ProductCardProps) {
   const [liked, setLiked] = useState(false);
   const [showPriceHistory, setShowPriceHistory] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
   
   const getPlatformLogo = (platform: Platform) => {
     switch (platform) {
@@ -28,14 +30,42 @@ export function ProductCard({ product, isBestDeal = false }: ProductCardProps) {
         return "https://via.placeholder.com/50x20";
     }
   };
-  
+
+  const handleBuyNow = () => {
+    if (!product.url) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Product link not available. Please try again later.",
+      });
+      return;
+    }
+    window.open(product.url, '_blank', 'noopener,noreferrer');
+  };
+
+  const totalCost = product.price + product.shipping + product.tax;
+  const savings = product.originalPrice ? product.originalPrice - product.price : 0;
+  const savingsPercentage = product.originalPrice ? (savings / product.originalPrice) * 100 : 0;
+
   return (
     <>
-      <Card className={`overflow-hidden transition-all duration-300 hover:shadow-lg ${isBestDeal ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''} group`}>
+      <Card className={`group overflow-hidden transition-all duration-300 hover:shadow-lg ${
+        isBestDeal ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
+      }`}>
         <CardHeader className="p-0 relative">
           {isBestDeal && (
-            <div className="absolute top-2 left-2 z-10">
-              <Badge variant="default" className="bg-primary">Best Deal</Badge>
+            <div className="absolute top-2 left-2 z-10 animate-pulse">
+              <Badge variant="default" className="bg-primary font-semibold">
+                Best Deal
+              </Badge>
+            </div>
+          )}
+          
+          {savings > 0 && (
+            <div className="absolute top-2 right-12 z-10">
+              <Badge variant="secondary" className="bg-green-500/10 text-green-500 dark:bg-green-500/20">
+                Save {savingsPercentage.toFixed(0)}%
+              </Badge>
             </div>
           )}
           
@@ -71,9 +101,9 @@ export function ProductCard({ product, isBestDeal = false }: ProductCardProps) {
             <h3 className="font-medium text-sm">{product.name}</h3>
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-2 animate-fade-in">
             <div className="flex items-baseline gap-2">
-              <span className="text-lg font-semibold">${product.price.toFixed(2)}</span>
+              <span className="text-lg font-semibold">${totalCost.toFixed(2)}</span>
               {product.originalPrice && product.originalPrice > product.price && (
                 <span className="text-muted-foreground line-through text-sm">
                   ${product.originalPrice.toFixed(2)}
@@ -100,8 +130,8 @@ export function ProductCard({ product, isBestDeal = false }: ProductCardProps) {
         
         <CardFooter className="p-4 pt-0 flex flex-col gap-2">
           <Button 
-            className="w-full gap-2" 
-            onClick={() => window.open(product.url, '_blank')}
+            className="w-full gap-2 group-hover:scale-105 transition-transform" 
+            onClick={handleBuyNow}
           >
             <ShoppingCart className="h-4 w-4" />
             Buy Now

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Bell, Menu, Search, ShoppingCart, User, X } from "lucide-react";
@@ -6,16 +5,24 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const navigate = useNavigate();
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchValue.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(searchValue)}`;
+      navigate(`/search?q=${encodeURIComponent(searchValue.trim())}`);
+      setIsMenuOpen(false);
     }
+  };
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    setIsMenuOpen(false);
   };
 
   return (
@@ -35,18 +42,34 @@ export function Navbar() {
           </Link>
           
           <nav className="hidden md:flex items-center gap-6">
-            <Link to="/" className="text-sm font-medium transition-colors hover:text-primary">
+            <Button
+              variant="ghost"
+              className="text-sm font-medium transition-colors hover:text-primary"
+              onClick={() => handleNavigate("/")}
+            >
               Home
-            </Link>
-            <Link to="/trending" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+            </Button>
+            <Button
+              variant="ghost"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              onClick={() => handleNavigate("/trending")}
+            >
               Trending
-            </Link>
-            <Link to="/categories" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+            </Button>
+            <Button
+              variant="ghost"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              onClick={() => handleNavigate("/categories")}
+            >
               Categories
-            </Link>
-            <Link to="/deals" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+            </Button>
+            <Button
+              variant="ghost"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+              onClick={() => handleNavigate("/deals")}
+            >
               Deals
-            </Link>
+            </Button>
           </nav>
         </div>
         
@@ -94,7 +117,6 @@ export function Navbar() {
         </div>
       </div>
       
-      {/* Mobile menu */}
       <div className={cn(
         "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm md:hidden transition-opacity",
         isMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"

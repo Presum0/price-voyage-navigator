@@ -1,5 +1,4 @@
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
@@ -17,12 +16,30 @@ export default function SearchResults() {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   
-  // Find the best deal (product with lowest total cost)
-  const bestDealProduct = filteredProducts.length > 0 
-    ? [...filteredProducts].sort((a, b) => 
-        (a.price + a.shipping + a.tax) - (b.price + b.shipping + b.tax)
-      )[0]
-    : null;
+  // Group products by name to enable comparison
+  const groupedProducts = useMemo(() => {
+    const groups = new Map<string, Product[]>();
+    filteredProducts.forEach(product => {
+      const name = product.name.toLowerCase();
+      if (!groups.has(name)) {
+        groups.set(name, []);
+      }
+      groups.get(name)?.push(product);
+    });
+    return Array.from(groups.values());
+  }, [filteredProducts]);
+  
+  // Find the best deal for each product group
+  const bestDeals = useMemo(() => {
+    return new Set(
+      groupedProducts.map(group => 
+        group.reduce((best, current) => 
+          (current.price + current.shipping + current.tax) < 
+          (best.price + best.shipping + best.tax) ? current : best
+        ).id
+      )
+    );
+  }, [groupedProducts]);
 
   // Simulate API call to search products
   useEffect(() => {
@@ -122,13 +139,20 @@ export default function SearchResults() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => (
-                <ProductCard 
-                  key={product.id} 
-                  product={product} 
-                  isBestDeal={bestDealProduct && product.id === bestDealProduct.id}
-                />
+            <div className="space-y-8">
+              {groupedProducts.map((group, index) => (
+                <div key={index} className="bg-card rounded-xl p-6 shadow-sm">
+                  <h3 className="text-xl font-semibold mb-4">{group[0].name}</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {group.map((product) => (
+                      <ProductCard 
+                        key={product.id} 
+                        product={product} 
+                        isBestDeal={bestDeals.has(product.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           )}
